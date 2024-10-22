@@ -23,16 +23,14 @@ class CloudStorageLoader:
             for file_name in files:
                 local_path = os.path.join(root, file_name)
                 blob_path = os.path.join(destination_folder, file_name)
-
                 blob = self.bucket.blob(blob_path)
                 blob.upload_from_filename(local_path)
-
                 logging.info(f"Upload de {file_name} para gs://{self.bucket_name}/{blob_path}")
 
-    def verify_folder_exists(self, folder_name: str = 'silver_layer_path/'):
-        blobs = list(self.bucket.list_blobs(prefix=folder_name))
+    def verify_folder_exists(self, folder_path: str):
+        blobs = list(self.bucket.list_blobs(prefix=folder_path))
         if not blobs:
-            logging.info(f"Pasta '{folder_name}' não existe. Criando...")
-            blob = self.bucket.blob(f"{folder_name}/.placeholder")
+            logging.info(f"Pasta '{folder_path}' não existe. Criando...")
+            blob = self.bucket.blob(f"{folder_path}/.placeholder")
             blob.upload_from_string('')
-            logging.info(f"Pasta '{folder_name}' criada com sucesso.")
+            logging.info(f"Pasta '{folder_path}' criada com sucesso.")
