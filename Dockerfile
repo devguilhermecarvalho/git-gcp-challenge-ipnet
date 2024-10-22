@@ -1,6 +1,7 @@
 FROM python:3.9-slim
 
 WORKDIR /app
+RUN mkdir -p silver_layer bronze_layer gold_layer
 
 COPY . .
 

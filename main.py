@@ -1,3 +1,5 @@
+# main.py
+
 import os
 import yaml
 import logging
@@ -24,7 +26,14 @@ def run_etl():
     dataset_id = configs['dataset_id']
     bronze_layer_path = configs['bronze_layer_path']
     silver_layer_path = configs['silver_layer_path']
+    gold_layer_path = configs['gold_layer_path']
     bucket_name = configs['bucket_name']
+
+    # Criar diretórios se não existirem
+    for path in [bronze_layer_path, silver_layer_path, gold_layer_path]:
+        if not os.path.exists(path):
+            os.makedirs(path)
+            logging.info(f"Diretório '{path}' criado.")
 
     validator = FileValidation()
     validator.validate_and_process_files()
@@ -44,7 +53,7 @@ def run_etl():
         print(f"Tabela '{table_id}' carregada com sucesso.")
     
     cloud_storage_loader = CloudStorageLoader(bucket_name)
-    cloud_storage_loader.verify_folder_exists('silver_layer_path/')
+    cloud_storage_loader.verify_folder_exists(silver_layer_path)
     cloud_storage_loader.upload_files(silver_layer_path)
 
 @app.route('/', methods=['GET'])
