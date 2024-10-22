@@ -44,7 +44,7 @@ def run_etl():
         print(f"Tabela '{table_id}' carregada com sucesso.")
     
     cloud_storage_loader = CloudStorageLoader(bucket_name)
-    cloud_storage_loader.verify_folder_exists('silver_layer_path')
+    cloud_storage_loader.verify_folder_exists('silver_layer_path/')
     cloud_storage_loader.upload_files(silver_layer_path)
 
 @app.route('/', methods=['GET'])

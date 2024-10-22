@@ -18,7 +18,11 @@ class CloudStorageLoader:
             logging.info(f"Bucket '{self.bucket_name}' criado com sucesso.")
         return bucket
 
-    def upload_files(self, source_directory: str, destination_folder: str = 'raw_validated/'):
+    def upload_files(self, source_directory: str, destination_folder: str = 'silver_layer/'):
+        if not os.path.exists(source_directory):
+            os.makedirs(source_directory)
+            logging.info(f"Diretório '{source_directory}' criado.")
+        
         for root, _, files in os.walk(source_directory):
             for file_name in files:
                 local_path = os.path.join(root, file_name)
