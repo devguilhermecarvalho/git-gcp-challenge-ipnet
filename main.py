@@ -37,7 +37,6 @@ def run_etl():
     # Instanciar o carregador de Cloud Storage
     cloud_storage_loader = CloudStorageLoader(bucket_name)
 
-    # Baixar arquivos da bronze_layer do bucket para o diretório temporário
     cloud_storage_loader.download_files_from_bucket('bronze_layer/', bronze_layer_path)
 
     validator = FileValidation()
@@ -57,10 +56,8 @@ def run_etl():
         bq_loader.load_dataframe(df, dataset_id, table_id)
         logging.info(f"Tabela '{table_id}' carregada com sucesso.")
 
-    # Fazer upload dos arquivos processados para a silver_layer no bucket
     cloud_storage_loader.upload_files(silver_layer_path, destination_folder='silver_layer/')
 
-    # Limpar os diretórios temporários
     for path in [bronze_layer_path, silver_layer_path, gold_layer_path]:
         if os.path.exists(path):
             shutil.rmtree(path)

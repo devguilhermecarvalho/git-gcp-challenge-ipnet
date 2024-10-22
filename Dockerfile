@@ -9,4 +9,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 EXPOSE 8080
 
-CMD ["gunicorn", "-b", "0.0.0.0:8080", "main:app", "python3", "main.py"]
+CMD /bin/bash -c "gunicorn -b 0.0.0.0:8080 main:app & sleep 5 && cd /app/dbt_transformations && dbt run && fg"
