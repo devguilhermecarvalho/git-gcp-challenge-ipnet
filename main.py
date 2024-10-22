@@ -34,10 +34,8 @@ def run_etl():
         raise e
 
 def create_bigquery_table():
-    """Cria uma tabela no BigQuery se ela não existir."""
     client = bigquery.Client()
-    dataset_id = "gcp-challenge-ipnet"
-    table_id = f"{dataset_id}.tabela_teste"
+    table_id = f"gcp-challenge-ipnet.dataset_challenge_ipnet.etl_log"
 
     schema = [
         bigquery.SchemaField("id", "STRING", mode="REQUIRED"),
@@ -53,9 +51,9 @@ def create_bigquery_table():
         logging.warning(f"Tabela {table_id} já existe ou erro na criação: {e}")
 
 def insert_test_data_into_bigquery():
-    """Insere um registro de teste na tabela do BigQuery."""
     client = bigquery.Client()
-    table_id = "dataset_challenge_ipnet.etl_log"
+    table_id = f"gcp-challenge-ipnet.dataset_challenge_ipnet.etl_log"
+
     rows_to_insert = [
         {"id": "1", "message": "Teste de inserção", "timestamp": bigquery._helpers.datetime.datetime.now()}
     ]
@@ -66,7 +64,6 @@ def insert_test_data_into_bigquery():
 
 @app.route('/', methods=['GET'])
 def trigger_etl_endpoint():
-    """Rota para acionar o processo ETL."""
     try:
         create_bigquery_table()
         run_etl()
@@ -75,5 +72,4 @@ def trigger_etl_endpoint():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    # Executa o servidor Flask
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
