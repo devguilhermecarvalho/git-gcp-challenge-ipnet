@@ -1,0 +1,16 @@
+db-dtypes
+dbt-core
+dbt-bigquery
+google-cloud-storage
+google-cloud-bigquery
+google-cloud-bigquery-storage
+google-cloud-secret-manager
+google-auth
+numpy
+pandas
+python-dotenv
+pyyaml
+openpyxl
+flask
+gunicorn
+functions-framework==3.*
