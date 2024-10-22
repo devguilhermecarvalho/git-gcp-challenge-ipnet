@@ -1,0 +1,10 @@
+dbt_transformations:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: service-account
+      project: gcp-challenge-ipnet
+      dataset: dataset_challenge_ipnet
+      threads: 4
+      keyfile: service-account.json

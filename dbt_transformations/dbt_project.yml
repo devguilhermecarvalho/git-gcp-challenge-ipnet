@@ -1,0 +1,27 @@
+
+name: 'dbt_transformations'
+version: '1.0'
+profile: 'default'
+config-version: 2
+
+profile: 'dbt_transformations'
+
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  dbt_transformations:
+    marts:
+      +materialized: table
+    staging:
+      +materialized: view
+

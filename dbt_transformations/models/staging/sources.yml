@@ -1,0 +1,10 @@
+version: 2
+
+sources:
+  - name: dataset_challenge_ipnet
+    database: gcp-challenge-ipnet
+    tables:
+      - name: difficulty
+      - name: challenges
+      - name: hackers
+      - name: submissions
