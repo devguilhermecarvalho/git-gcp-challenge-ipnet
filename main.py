@@ -9,7 +9,7 @@ from src.data_ingestion import DataIngestion
 from src.data_validation import DataValidation
 
 from src.loaders.bigquery_loader import BigQueryLoader
-from src.loaders.cloudstorage_loader import CloudStorageLoader
+from src.loaders.cloud_storage_loader import CloudStorageLoader
 
 # Configuração de logging para Cloud Run
 logging.basicConfig(level=logging.INFO)
