@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
 
 def run_etl():
-    with open('config/gcp_configs.yaml', 'r') as f:
+    with open('configs/gcp_config.yaml', 'r') as f:
         configs = yaml.safe_load(f)
     
     project_id = configs['project_id']
