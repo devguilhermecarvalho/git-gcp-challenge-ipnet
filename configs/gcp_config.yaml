@@ -1,13 +1,10 @@
-# configs/gcp_config.yaml
 project_id: 'gcp-challenge-ipnet'
-
 dataset_id: 'dataset_challenge_ipnet'
-
 bucket_name: 'datalake_challenge'
 
-bronze_layer_path: 'bronze_layer/'
-silver_layer_path: 'silver_layer/'
-gold_layer_path: 'gold_layer/'
+bronze_layer_path: '/tmp/bronze_layer/'
+silver_layer_path: '/tmp/silver_layer/'
+gold_layer_path: '/tmp/gold_layer/'
 
 file_delimiter_mapping:
   hackers.csv: '|'

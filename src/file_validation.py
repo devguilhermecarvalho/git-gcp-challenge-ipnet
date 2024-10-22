@@ -1,4 +1,3 @@
-# src/file_validation.py
 import os
 import yaml
 import glob

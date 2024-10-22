@@ -1,4 +1,3 @@
-# src/loaders/cloud_storage_loader.py
 import os
 import logging
 from google.cloud import storage
@@ -19,23 +18,44 @@ class CloudStorageLoader:
             logging.info(f"Bucket '{self.bucket_name}' criado com sucesso.")
         return bucket
 
-    def upload_files(self, source_directory: str, destination_folder: str = 'silver_layer/'):
+    def upload_files(self, source_directory: str, destination_folder: str):
         if not os.path.exists(source_directory):
-            os.makedirs(source_directory)
-            logging.info(f"Diretório '{source_directory}' criado.")
+            logging.warning(f"Diretório '{source_directory}' não existe. Nenhum arquivo para fazer upload.")
+            return
         
         for root, _, files in os.walk(source_directory):
             for file_name in files:
                 local_path = os.path.join(root, file_name)
-                blob_path = os.path.join(destination_folder, file_name)
+                relative_path = os.path.relpath(local_path, source_directory)
+                blob_path = os.path.join(destination_folder, relative_path)
                 blob = self.bucket.blob(blob_path)
                 blob.upload_from_filename(local_path)
                 logging.info(f"Upload de {file_name} para gs://{self.bucket_name}/{blob_path}")
 
+    def download_files_from_bucket(self, source_folder: str, destination_directory: str):
+        blobs = self.client.list_blobs(self.bucket_name, prefix=source_folder)
+        os.makedirs(destination_directory, exist_ok=True)
+        files_downloaded = False
+
+        for blob in blobs:
+            # Ignorar pastas
+            if blob.name.endswith('/'):
+                continue
+
+            relative_path = os.path.relpath(blob.name, source_folder)
+            local_path = os.path.join(destination_directory, relative_path)
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            blob.download_to_filename(local_path)
+            logging.info(f"Download de {blob.name} para {local_path}")
+            files_downloaded = True
+
+        if not files_downloaded:
+            logging.warning(f"Nenhum arquivo encontrado na pasta '{source_folder}' do bucket '{self.bucket_name}'.")
+
     def verify_folder_exists(self, folder_path: str):
         blobs = list(self.bucket.list_blobs(prefix=folder_path))
         if not blobs:
-            logging.info(f"Pasta '{folder_path}' não existe. Criando...")
+            logging.info(f"Pasta '{folder_path}' não existe no bucket '{self.bucket_name}'. Criando...")
             blob = self.bucket.blob(f"{folder_path}/.placeholder")
             blob.upload_from_string('')
             logging.info(f"Pasta '{folder_path}' criada com sucesso.")

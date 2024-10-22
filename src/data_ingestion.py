@@ -1,4 +1,3 @@
-# src/data_ingestion.py
 import pandas as pd
 import os
 from typing import Dict
@@ -10,6 +9,7 @@ with open('configs/gcp_config.yaml', 'r') as f:
     configs = yaml.safe_load(f)
 
 silver_layer_path = configs['silver_layer_path']
+file_delimiter_mapping = configs.get('file_delimiter_mapping', {})
 
 class Reader(ABC):
     @abstractmethod
@@ -62,8 +62,11 @@ class ReaderFactory:
 class DataIngestion:
     def read_data(self, path: str) -> Dict[str, pd.DataFrame]:
         dataframes = {}
+        if not os.path.exists(path):
+            logging.error(f"O diretório '{path}' não existe.")
+            return dataframes
+
         files_in_directory = os.listdir(path)
-        file_delimiter_mapping = configs.get('file_delimiter_mapping', {})
 
         for file_name in files_in_directory:
             file_path = os.path.join(path, file_name)

@@ -6,8 +6,6 @@ from typing import Dict
 with open('configs/gcp_config.yaml', 'r') as f:
     configs = yaml.safe_load(f)
 
-silver_layer_path = configs['silver_layer_path']
-
 class DataValidation:
     def __init__(self, dataframes: Dict[str, pd.DataFrame]):
         self.dataframes = dataframes

@@ -1,4 +1,3 @@
-# src/loaders/bigquery_loader.py
 import logging
 import pandas as pd
 from google.cloud import bigquery

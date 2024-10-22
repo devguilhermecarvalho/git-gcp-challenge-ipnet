@@ -1,8 +1,7 @@
-# main.py
-
 import os
 import yaml
 import logging
+import shutil
 
 from flask import Flask, jsonify
 
@@ -24,16 +23,22 @@ def run_etl():
     
     project_id = configs['project_id']
     dataset_id = configs['dataset_id']
+    bucket_name = configs['bucket_name']
     bronze_layer_path = configs['bronze_layer_path']
     silver_layer_path = configs['silver_layer_path']
     gold_layer_path = configs['gold_layer_path']
-    bucket_name = configs['bucket_name']
 
-    # Criar diretórios se não existirem
+    # Criar diretórios temporários se não existirem
     for path in [bronze_layer_path, silver_layer_path, gold_layer_path]:
         if not os.path.exists(path):
             os.makedirs(path)
             logging.info(f"Diretório '{path}' criado.")
+
+    # Instanciar o carregador de Cloud Storage
+    cloud_storage_loader = CloudStorageLoader(bucket_name)
+
+    # Baixar arquivos da bronze_layer do bucket para o diretório temporário
+    cloud_storage_loader.download_files_from_bucket('bronze_layer/', bronze_layer_path)
 
     validator = FileValidation()
     validator.validate_and_process_files()
@@ -50,18 +55,24 @@ def run_etl():
     for file_name, df in dataframes.items():
         table_id = file_name.split('.')[0]
         bq_loader.load_dataframe(df, dataset_id, table_id)
-        print(f"Tabela '{table_id}' carregada com sucesso.")
-    
-    cloud_storage_loader = CloudStorageLoader(bucket_name)
-    cloud_storage_loader.verify_folder_exists(silver_layer_path)
-    cloud_storage_loader.upload_files(silver_layer_path)
+        logging.info(f"Tabela '{table_id}' carregada com sucesso.")
+
+    # Fazer upload dos arquivos processados para a silver_layer no bucket
+    cloud_storage_loader.upload_files(silver_layer_path, destination_folder='silver_layer/')
+
+    # Limpar os diretórios temporários
+    for path in [bronze_layer_path, silver_layer_path, gold_layer_path]:
+        if os.path.exists(path):
+            shutil.rmtree(path)
+            logging.info(f"Diretório '{path}' removido após o processamento.")
 
 @app.route('/', methods=['GET'])
 def trigger_etl_endpoint():
     try:
         run_etl()
-        return jsonify({'message': 'ETL process completed successfully'}), 200
+        return jsonify({'message': 'Processo ETL concluído com sucesso'}), 200
     except Exception as e:
+        logging.error(f"Erro no processo ETL: {e}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
