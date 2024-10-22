@@ -7,3 +7,6 @@ bucket_name: 'datalake_challenge'
 bronze_layer_path: 'bronze_layer'
 silver_layer_path: 'silver_layer'
 gold_layer_path: 'gold_layer'
+
+file_delimiter_mapping:
+  hackers.csv: '|'

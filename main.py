@@ -1,9 +1,15 @@
-import pandas as pd
 import os
+import yaml
 import logging
-from google.cloud import storage
-from google.cloud import bigquery
+
 from flask import Flask, jsonify
+
+from src.file_validation import FileValidation
+from src.data_ingestion import DataIngestion
+from src.data_validation import DataValidation
+
+from src.loaders.bigquery_loader import BigQueryLoader
+from src.loaders.cloudstorage_loader import CloudStorageLoader
 
 # Configuração de logging para Cloud Run
 logging.basicConfig(level=logging.INFO)
@@ -11,61 +17,39 @@ logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
 
 def run_etl():
-    """Executa o processo ETL e insere um teste no BigQuery."""
-    try:
-        # Inicializa o cliente do Cloud Storage
-        client = storage.Client()
-        bucket = client.get_bucket('datalake_challenge')
+    with open('config/gcp_configs.yaml', 'r') as f:
+        configs = yaml.safe_load(f)
+    
+    project_id = configs['project_id']
+    dataset_id = configs['dataset_id']
+    bronze_layer_path = configs['bronze_layer_path']
+    silver_layer_path = configs['silver_layer_path']
+    bucket_name = configs['bucket_name']
 
-        # Define o nome do arquivo na camada bronze
-        filename = "bronze_layer/hackers.csv"
-        blob = bucket.blob(filename)
+    validator = FileValidation()
+    validator.validate_and_process_files()
 
-        if blob.exists():
-            logging.info(f"Arquivo encontrado no GCS: {filename}")
-        else:
-            raise FileNotFoundError(f"Arquivo {filename} não encontrado no GCS.")
-        
-        # Inserir registro de teste no BigQuery
-        insert_test_data_into_bigquery()
-        logging.info("Dados inseridos no BigQuery com sucesso.")
-    except Exception as e:
-        logging.error(f"Erro durante o processo ETL: {e}")
-        raise e
+    data_ingestion = DataIngestion()
+    dataframes = data_ingestion.read_data(silver_layer_path)
 
-def create_bigquery_table():
-    client = bigquery.Client()
-    table_id = f"gcp-challenge-ipnet.dataset_challenge_ipnet.etl_log"
+    data_validation = DataValidation(dataframes)
+    data_validation.validate_data()
 
-    schema = [
-        bigquery.SchemaField("id", "INT", mode="REQUIRED"),
-        bigquery.SchemaField("message", "STRING", mode="NULLABLE"),
-        bigquery.SchemaField("name", "STRING", mode="NULLABLE"),
-    ]
+    bq_loader = BigQueryLoader(project_id)
+    bq_loader.create_dataset_if_not_exists(dataset_id)
 
-    table = bigquery.Table(table_id, schema=schema)
-    try:
-        client.create_table(table)
-        logging.info(f"Tabela {table_id} criada com sucesso.")
-    except Exception as e:
-        logging.warning(f"Tabela {table_id} já existe ou erro na criação: {e}")
-
-def insert_test_data_into_bigquery():
-    client = bigquery.Client()
-    table_id = f"gcp-challenge-ipnet.dataset_challenge_ipnet.etl_log"
-
-    rows_to_insert = [
-        {"id": 1, "message": "Teste de inserção", "name": "Guilherme"}
-    ]
-
-    errors = client.insert_rows_json(table_id, rows_to_insert)
-    if errors:
-        raise Exception(f"Erro ao inserir dados: {errors}")
+    for file_name, df in dataframes.items():
+        table_id = file_name.split('.')[0]
+        bq_loader.load_dataframe(df, dataset_id, table_id)
+        print(f"Tabela '{table_id}' carregada com sucesso.")
+    
+    cloud_storage_loader = CloudStorageLoader(bucket_name)
+    cloud_storage_loader.verify_folder_exists('silver_layer_path/')
+    cloud_storage_loader.upload_files(silver_layer_path)
 
 @app.route('/', methods=['GET'])
 def trigger_etl_endpoint():
     try:
-        create_bigquery_table()
         run_etl()
         return jsonify({'message': 'ETL process completed successfully'}), 200
     except Exception as e:
