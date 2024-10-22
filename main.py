@@ -36,8 +36,8 @@ def run_etl():
 def create_bigquery_table():
     """Cria uma tabela no BigQuery se ela não existir."""
     client = bigquery.Client()
-    dataset_id = "dataset_challenge_ipnet"
-    table_id = f"{dataset_id}.etl_log"
+    dataset_id = "gcp-challenge-ipnet"
+    table_id = f"{dataset_id}.tabela_teste"
 
     schema = [
         bigquery.SchemaField("id", "STRING", mode="REQUIRED"),
