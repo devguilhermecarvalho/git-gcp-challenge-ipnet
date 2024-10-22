@@ -38,9 +38,9 @@ def create_bigquery_table():
     table_id = f"gcp-challenge-ipnet.dataset_challenge_ipnet.etl_log"
 
     schema = [
-        bigquery.SchemaField("id", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("id", "INT", mode="REQUIRED"),
         bigquery.SchemaField("message", "STRING", mode="NULLABLE"),
-        bigquery.SchemaField("timestamp", "TIMESTAMP", mode="REQUIRED"),
+        bigquery.SchemaField("name", "STRING", mode="NULLABLE"),
     ]
 
     table = bigquery.Table(table_id, schema=schema)
@@ -55,7 +55,7 @@ def insert_test_data_into_bigquery():
     table_id = f"gcp-challenge-ipnet.dataset_challenge_ipnet.etl_log"
 
     rows_to_insert = [
-        {"id": "1", "message": "Teste de inserção", "timestamp": bigquery._helpers.datetime.datetime.now()}
+        {"id": 1, "message": "Teste de inserção", "name": "Guilherme"}
     ]
 
     errors = client.insert_rows_json(table_id, rows_to_insert)
