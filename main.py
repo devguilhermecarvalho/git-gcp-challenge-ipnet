@@ -36,7 +36,7 @@ def run_etl():
 def create_bigquery_table():
     """Cria uma tabela no BigQuery se ela não existir."""
     client = bigquery.Client()
-    dataset_id = "meu_dataset"  # Substituir pelo seu dataset
+    dataset_id = "dataset_challenge_ipnet"
     table_id = f"{dataset_id}.etl_log"
 
     schema = [
@@ -55,8 +55,7 @@ def create_bigquery_table():
 def insert_test_data_into_bigquery():
     """Insere um registro de teste na tabela do BigQuery."""
     client = bigquery.Client()
-    table_id = "meu_dataset.etl_log"  # Substituir pelo seu dataset
-
+    table_id = "dataset_challenge_ipnet.etl_log"
     rows_to_insert = [
         {"id": "1", "message": "Teste de inserção", "timestamp": bigquery._helpers.datetime.datetime.now()}
     ]
