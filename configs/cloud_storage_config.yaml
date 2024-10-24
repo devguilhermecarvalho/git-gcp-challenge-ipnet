@@ -1,0 +1,10 @@
+cloud_storage:
+  bucket_name: "datalake_challenge"
+  create_folders:
+    - "bronze_layer/"
+    - "silver_layer/
+    - "gold_layer/"
+
+bronze_layer_path: '/tmp/bronze_layer/'
+silver_layer_path: '/tmp/silver_layer/'
+gold_layer_path: '/tmp/gold_layer/'

@@ -62,9 +62,6 @@ class ReaderFactory:
 class DataIngestion:
     def read_data(self, path: str) -> Dict[str, pd.DataFrame]:
         dataframes = {}
-        if not os.path.exists(path):
-            logging.error(f"O diretório '{path}' não existe.")
-            return dataframes
 
         files_in_directory = os.listdir(path)
 

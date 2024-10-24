@@ -3,24 +3,36 @@ import logging
 from google.cloud import storage
 
 class CloudStorageLoader:
-    def __init__(self, bucket_name: str):
+    def __init__(self, config: dict):
         self.client = storage.Client()
-        self.bucket_name = bucket_name
-        self.bucket = self.get_or_create_bucket()
+        self.bucket_name = config["bucket_name"]
+        self.folders = config.get("create_folders", [])
 
-    def get_or_create_bucket(self):
+    def get_bucket_environment(self):
+        """Verifica e cria o bucket e as pastas necessárias em uma única função."""
         try:
-            bucket = self.client.get_bucket(self.bucket_name)
-            logging.info(f"Bucket '{self.bucket_name}' já existe.")
+            # Verifica ou cria o bucket
+            try:
+                bucket = self.client.get_bucket(self.bucket_name)
+            except Exception:
+                bucket = self.client.create_bucket(self.bucket_name)
+
+            # Verifica ou cria as pastas
+            for folder in self.folders:
+                blobs = list(self.client.list_blobs(bucket, prefix=f"{folder}/", max_results=1))
+                if blobs:
+                else:
+                    blob = bucket.blob(f"{folder}/")
+                    blob.upload_from_string("")  # Cria um 'blob' vazio para simular a pasta
+                    logger.info(f"Pasta '{folder}' criada no bucket '{self.bucket_name}'.")
         except Exception as e:
-            logging.info(f"Bucket '{self.bucket_name}' não encontrado. Criando...")
-            bucket = self.client.create_bucket(self.bucket_name)
-            logging.info(f"Bucket '{self.bucket_name}' criado com sucesso.")
-        return bucket
+            raise
+    
+    
+    def get_bucket_environment(self):
 
     def upload_files(self, source_directory: str, destination_folder: str):
         if not os.path.exists(source_directory):
-            logging.warning(f"Diretório '{source_directory}' não existe. Nenhum arquivo para fazer upload.")
             return
         
         for root, _, files in os.walk(source_directory):
