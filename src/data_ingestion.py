@@ -1,55 +1,67 @@
 import pandas as pd
-import os
 from typing import Dict
 from abc import ABC, abstractmethod
-import yaml
-import logging
-
-with open('configs/gcp_config.yaml', 'r') as f:
-    configs = yaml.safe_load(f)
-
-silver_layer_path = configs['silver_layer_path']
-file_delimiter_mapping = configs.get('file_delimiter_mapping', {})
+import os
+import io
+from concurrent.futures import ProcessPoolExecutor
 
 class Reader(ABC):
     @abstractmethod
-    def read(self, file_path: str, delimiter=None) -> pd.DataFrame:
+    def read(self, file_content: bytes, delimiter=None) -> pd.DataFrame:
         pass
 
 class CSVReader(Reader):
-    def read(self, file_path: str, delimiter=None) -> pd.DataFrame:
+    def read(self, file_content: bytes, delimiter=None) -> pd.DataFrame:
         try:
+            content = file_content.decode('utf-8')
             if delimiter:
-                df = pd.read_csv(file_path, sep=delimiter, engine='python', header=None)
+                df = pd.read_csv(io.StringIO(content), sep=delimiter, engine='python')
             else:
-                df = pd.read_csv(file_path, sep=None, engine='python', header=None)
-            df = self._apply_generic_headers(df)
+                df = pd.read_csv(io.StringIO(content), sep=None, engine='python')
             return df
         except Exception as e:
-            logging.error(f"Erro ao ler o arquivo {file_path}: {e}")
-            raise e
-
-    def _apply_generic_headers(self, df: pd.DataFrame) -> pd.DataFrame:
-        num_columns = df.shape[1]
-        generic_headers = [f'column{i+1}' for i in range(num_columns)]
-        df.columns = generic_headers
-        return df
+            error_message = f"Erro ao ler o conteúdo do arquivo CSV: {e}"
+            raise Exception(error_message)
 
 class TSVReader(Reader):
-    def read(self, file_path: str, delimiter=None) -> pd.DataFrame:
-        return pd.read_csv(file_path, sep='\t', header=None)
+    def read(self, file_content: bytes, delimiter=None) -> pd.DataFrame:
+        try:
+            content = file_content.decode('utf-8')
+            df = pd.read_csv(io.StringIO(content), sep='\t', engine='python')
+            return df
+        except Exception as e:
+            error_message = f"Erro ao ler o conteúdo do arquivo TSV: {e}"
+            raise Exception(error_message)
 
 class ExcelReader(Reader):
-    def read(self, file_path: str, delimiter=None) -> pd.DataFrame:
-        return pd.read_excel(file_path, header=None)
-    
+    def read(self, file_content: bytes, delimiter=None) -> pd.DataFrame:
+        try:
+            from io import BytesIO
+            df = pd.read_excel(BytesIO(file_content), engine='openpyxl')
+            return df
+        except Exception as e:
+            error_message = f"Erro ao ler o conteúdo do arquivo Excel: {e}"
+            raise Exception(error_message)
+
+class JSONReader(Reader):
+    def read(self, file_content: bytes, delimiter=None) -> pd.DataFrame:
+        try:
+            import json
+            data = json.loads(file_content.decode('utf-8'))
+            df = pd.json_normalize(data)
+            return df
+        except Exception as e:
+            error_message = f"Erro ao ler o conteúdo do arquivo JSON: {e}"
+            raise Exception(error_message)
+
 class ReaderFactory:
     _readers = {
         '.csv': CSVReader(),
         '.tsv': TSVReader(),
         '.txt': CSVReader(),
         '.xlsx': ExcelReader(),
-        '.xls': ExcelReader()
+        '.xls': ExcelReader(),
+        '.json': JSONReader()
     }
 
     @classmethod
@@ -60,21 +72,30 @@ class ReaderFactory:
         return reader
 
 class DataIngestion:
-    def read_data(self, path: str) -> Dict[str, pd.DataFrame]:
+    def __init__(self, file_delimiter_mapping: Dict[str, str], parallelism_config: Dict[str, int]):
+        self.file_delimiter_mapping = file_delimiter_mapping
+        self.messages = []
+        self.max_workers_cpu = parallelism_config.get('max_workers_cpu', 4)
+
+    def read_data(self, files: Dict[str, bytes]) -> Dict[str, pd.DataFrame]:
         dataframes = {}
-
-        files_in_directory = os.listdir(path)
-
-        for file_name in files_in_directory:
-            file_path = os.path.join(path, file_name)
-            if os.path.isfile(file_path):
-                extension = os.path.splitext(file_name)[1].lower()
+        with ProcessPoolExecutor(max_workers=self.max_workers_cpu) as executor:
+            futures = {executor.submit(self._read_file, file_name, file_content): file_name for file_name, file_content in files.items()}
+            for future in futures:
+                file_name = futures[future]
                 try:
-                    reader = ReaderFactory.get_reader(extension)
-                    delimiter = file_delimiter_mapping.get(file_name, None)
-                    df = reader.read(file_path, delimiter=delimiter)
+                    df = future.result()
                     dataframes[file_name] = df
-                    logging.info(f"O arquivo '{file_name}' foi carregado com sucesso.")
+                    success_message = f"O arquivo '{file_name}' foi carregado com sucesso."
+                    self.messages.append(success_message)
                 except Exception as e:
-                    logging.error(f"Erro ao carregar o arquivo '{file_name}': {e}")
+                    error_message = f"Erro ao carregar o arquivo '{file_name}': {e}"
+                    self.messages.append(error_message)
         return dataframes
+
+    def _read_file(self, file_name, file_content):
+        extension = os.path.splitext(file_name)[1].lower()
+        reader = ReaderFactory.get_reader(extension)
+        delimiter = self.file_delimiter_mapping.get(file_name)
+        df = reader.read(file_content, delimiter=delimiter)
+        return df

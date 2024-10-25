@@ -13,4 +13,3 @@ pyyaml
 openpyxl
 flask
 gunicorn
-functions-framework==3.*

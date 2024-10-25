@@ -1,0 +1,13 @@
+# configs/gcp_configs.yaml
+project_id: "gcp-challenge-ipnet"
+credentials_path: "credentials/key.json"  # Replace with your key
+
+cloud_storage:
+  bucket_name: "datalake_challenge"
+  create_folders:
+    - "bronze_layer/"
+    - "silver_layer/"
+    - "gold_layer/"
+
+bigquery:
+  dataset_id: "dataset_challenge_ipnet"

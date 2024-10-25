@@ -1,5 +1,0 @@
-bigquery:
-  project_id: "gcp-challenge-ipnet"
-  dataset_id: "dataset_challenge_ipnet"
-  table_id: "my_table"
-  credentials_path: "/path/to/credentials.json"

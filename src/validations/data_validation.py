@@ -1,34 +1,44 @@
-import yaml
-import logging
+# src/validations/data_validation.py
 import pandas as pd
 from typing import Dict
-
-with open('configs/gcp_config.yaml', 'r') as f:
-    configs = yaml.safe_load(f)
+from concurrent.futures import ProcessPoolExecutor
 
 class DataValidation:
-    def __init__(self, dataframes: Dict[str, pd.DataFrame]):
+    def __init__(self, dataframes: Dict[str, pd.DataFrame], parallelism_config: Dict[str, int]):
         self.dataframes = dataframes
+        self.messages = []
+        self.max_workers_cpu = parallelism_config.get('max_workers_cpu', 4)
 
     def validate_data(self):
-        for file_name, df in self.dataframes.items():
-            try:
-                if df.empty:
-                    raise ValueError(f"O DataFrame do arquivo '{file_name}' está vazio.")
-                df = self.validate_headers(df, file_name)
-                if df.isnull().values.any():
-                    logging.info(f"Aviso: O DataFrame do arquivo '{file_name}' contém valores nulos.")
-                else:
-                    logging.info(f"O DataFrame do arquivo '{file_name}' passou nas validações.")
-            except Exception as e:
-                logging.error(f"Erro na validação do arquivo '{file_name}': {e}")
+        with ProcessPoolExecutor(max_workers=self.max_workers_cpu) as executor:
+            futures = {executor.submit(self._validate_dataframe, file_name, df): file_name for file_name, df in self.dataframes.items()}
+            for future in futures:
+                file_name = futures[future]
+                try:
+                    future.result()
+                except Exception as e:
+                    error_message = f"Erro ao validar o DataFrame '{file_name}': {e}"
+                    self.messages.append(error_message)
+                    raise e
 
-    def validate_headers(self, df: pd.DataFrame, file_name: str) -> pd.DataFrame:
+    def _validate_dataframe(self, file_name, df):
+        if df.empty:
+            error_message = f"O DataFrame '{file_name}' está vazio."
+            self.messages.append(error_message)
+            raise ValueError(error_message)
+        self.validate_headers(df, file_name)
+        if df.isnull().values.any():
+            warning_message = f"DataFrame '{file_name}' contém valores nulos."
+            self.messages.append(warning_message)
+
+    def validate_headers(self, df: pd.DataFrame, file_name: str):
         if all(isinstance(col, (int, float)) or str(col).isdigit() for col in df.columns):
-            logging.info(f"Headers numéricos detectados no arquivo '{file_name}'. Atribuindo headers genéricos.")
             num_columns = df.shape[1]
             generic_headers = [f'column{i+1}' for i in range(num_columns)]
             df.columns = generic_headers
+            message = f"Headers genéricos aplicados ao DataFrame '{file_name}'."
+            self.messages.append(message)
         else:
-            df.columns = df.columns.map(str)
-        return df
+            df.columns = df.columns.map(str).str.strip()
+            message = f"Headers do DataFrame '{file_name}' validados."
+            self.messages.append(message)

@@ -1,10 +1,7 @@
-project_id: 'gcp-challenge-ipnet'
-dataset_id: 'dataset_challenge_ipnet'
-bucket_name: 'datalake_challenge'
-
-bronze_layer_path: '/tmp/bronze_layer/'
-silver_layer_path: '/tmp/silver_layer/'
-gold_layer_path: '/tmp/gold_layer/'
-
 file_delimiter_mapping:
   hackers.csv: '|'
+
+# Configurações de paralelismo
+parallelism:
+  max_workers_io: 5      # Para operações I/O-bound (ThreadPoolExecutor)
+  max_workers_cpu: 4     # Para operações CPU-bound (ProcessPoolExecutor)
