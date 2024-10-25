@@ -15,9 +15,9 @@ class CSVReader(Reader):
         try:
             content = file_content.decode('utf-8')
             if delimiter:
-                df = pd.read_csv(io.StringIO(content), sep=delimiter, engine='python')
+                df = pd.read_csv(io.StringIO(content), sep=delimiter, engine='python', header=0)
             else:
-                df = pd.read_csv(io.StringIO(content), sep=None, engine='python')
+                df = pd.read_csv(io.StringIO(content), sep=None, engine='python', header=0)
             return df
         except Exception as e:
             error_message = f"Erro ao ler o conteúdo do arquivo CSV: {e}"
@@ -27,7 +27,7 @@ class TSVReader(Reader):
     def read(self, file_content: bytes, delimiter=None) -> pd.DataFrame:
         try:
             content = file_content.decode('utf-8')
-            df = pd.read_csv(io.StringIO(content), sep='\t', engine='python')
+            df = pd.read_csv(io.StringIO(content), sep='\t', engine='python', header=0)
             return df
         except Exception as e:
             error_message = f"Erro ao ler o conteúdo do arquivo TSV: {e}"
@@ -37,7 +37,7 @@ class ExcelReader(Reader):
     def read(self, file_content: bytes, delimiter=None) -> pd.DataFrame:
         try:
             from io import BytesIO
-            df = pd.read_excel(BytesIO(file_content), engine='openpyxl')
+            df = pd.read_excel(BytesIO(file_content), engine='openpyxl', header=0)
             return df
         except Exception as e:
             error_message = f"Erro ao ler o conteúdo do arquivo Excel: {e}"

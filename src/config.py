@@ -1,4 +1,3 @@
-# src/config.py
 import yaml
 
 class Config:
