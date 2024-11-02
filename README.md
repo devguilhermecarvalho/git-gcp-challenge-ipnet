@@ -1,4 +1,4 @@
-# Challenge - Google Cloud IPNet ETL
+# Desafio - ETL utilizando as ferramentas do Google Cloud
 
 Este projeto é um desafio que implementa um pipeline ETL (Extract, Transform, Load) que lê arquivos de um bucket no Google Cloud Storage, processa e valida os dados, e os carrega em tabelas do BigQuery. Após o carregamento, o dbt é utilizado para transformar os dados no BigQuery. O projeto está preparado para ser implantado no Cloud Run utilizando o Cloud Build.
 
